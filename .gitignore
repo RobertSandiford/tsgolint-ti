@@ -1,6 +1,11 @@
 /tsgolint
 /tsgolint.exe
 /.gocache/
+/build/
+/npm/*-*/
+/npm/core/package.json
+/npm/core/LICENSE
+/npm/core/README.md
 internal/collections/
 e2e/node_modules/
 node_modules/

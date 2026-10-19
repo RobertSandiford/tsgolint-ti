@@ -1,30 +1,24 @@
 <div align="center">
-  <h1>✨ tsgolint ✨</h1>
+  <h1>✨ tsgolint-ti ✨</h1>
 </div>
 
-<div align="center">
+A fork of [tsgolint](https://github.com/oxc-project/tsgolint) for TightScript
 
-[![MIT licensed][license-badge]][license-url]
-[![Build Status][ci-badge]][ci-url]
-[![Discord chat][discord-badge]][discord-url]
-[![npm weekly downloads][npm-badge]][npm-url]
+---
 
-</div>
+High-performance **type-aware linting** for oxlint-ti, the TightScript fork of Oxlint.
 
-High-performance **type-aware linting** for Oxlint.
+`tsgolint-ti` executes lint rules that require **TightScript or TypeScript semantic analysis**, using TypeScript for full compatibility with the TightScript and TypeScript type system.
 
-`tsgolint` executes lint rules that require **TypeScript semantic analysis**, using [typescript-go](https://github.com/microsoft/typescript-go) for full compatibility with the TypeScript type system, and targets **TypeScript 7** (codenamed **Project Corsa**).
-
-It is designed to integrate seamlessly with Oxlint's fast syntax linting, enabling projects to run deeper semantic checks without sacrificing performance.
+It is designed to integrate seamlessly with oxlint-ti's fast syntax linting, enabling projects to run deeper semantic checks without sacrificing performance.
 
 Key highlights:
 
-- **Performance**: 10–20x faster than ESLint + typescript-eslint in the [benchmarks](./benchmarks/README.md)
-- **Coverage**: 59/61 targeted `typescript-eslint` type-aware rules implemented
+- **TightScript-aware**: parses every TightScript syntax form and honours its compiler options (`permissionModifiers`, `objectCreationDefault`, …) from your `tsconfig.json`
+- **Performance**: 10–20x faster than ESLint + typescript-eslint in upstream tsgolint's [benchmarks](./benchmarks/README.md)
+- **Coverage**: 60/62 targeted `typescript-eslint` type-aware rules implemented
 - **Parallel**: Multi-core rule execution for scalable analysis
 - **High impact**: catches production-grade bugs that syntax-only linting misses (for example `no-floating-promises`)
-
-This project originated in [typescript-eslint/tsgolint](https://github.com/typescript-eslint/tsgolint), with fork permission granted by [@auvred](https://github.com/auvred).
 
 ## Why Teams Upgrade to Type-Aware Linting
 
@@ -51,26 +45,41 @@ Without this rule, rejected promises can be missed and reach production as flaky
 
 ## Installation & Usage
 
-`tsgolint` is integrated into Oxlint as the type-aware backend. Install and use via Oxlint:
+`tsgolint-ti` is the type-aware backend for oxlint-ti. Build it, then point oxlint-ti at the binary with `OXLINT_TSGOLINT_PATH`:
 
 ```shell
-# Install oxlint with type-aware support
-pnpm add -D oxlint-tsgolint@latest
+# Build (first time: `just init` fetches the TightScript compiler and applies patches/)
+just init
+just build
 
-# Quick start
-pnpm dlx oxlint --type-aware
-
-# Or run on your project
-oxlint --type-aware
+# Run oxlint-ti with type-aware rules
+OXLINT_TSGOLINT_PATH=/path/to/tsgolint-ti/tsgolint oxlint --type-aware
 
 # Optionally also run typechecking at the same time
-oxlint --type-aware --type-check
+OXLINT_TSGOLINT_PATH=/path/to/tsgolint-ti/tsgolint oxlint --type-aware --type-check
 ```
+
+On Windows the binary is `tsgolint.exe`.
 
 ### What these flags do
 
-- `--type-aware`: enables `typescript/*` rules that require TypeScript semantic analysis via `tsgolint`
-- `--type-check`: includes type diagnostics from `typescript-go` in type-aware runs
+- `--type-aware`: enables `typescript/*` rules that require TightScript/TypeScript semantic analysis via `tsgolint-ti`
+- `--type-check`: includes type diagnostics from the TightScript compiler in type-aware runs
+
+### TightScript projects
+
+TightScript options are read from the project's `tsconfig.json`, as the compiler reads them:
+
+```jsonc
+{
+  "compilerOptions": {
+    "permissionModifiers": true,
+    "objectCreationDefault": "exact",
+  },
+}
+```
+
+Rules follow TightScript's semantics where they differ from TypeScript's. For example, a marker on a new literal such as `{ ... } as owned` or `as exact` is an inference hint, like `as const`. It is not reported as an unsafe or unnecessary assertion.
 
 ### Configuration
 
@@ -96,17 +105,17 @@ Over 50 TypeScript-specific type-aware rules are available. For detailed setup a
 > [!NOTE]
 > Non-type-aware TypeScript rules can be found in [Oxlint's TypeScript rules](https://oxc.rs/docs/guide/usage/linter/rules.html) under the TypeScript source.
 
-## How it fits into Oxlint
+## How it fits into oxlint-ti
 
-Oxlint separates linting into two layers:
+oxlint-ti separates linting into two layers:
 
-| Layer        | Purpose                      | Speed                  |
-| ------------ | ---------------------------- | ---------------------- |
-| **Oxlint**   | Syntax & structural analysis | Instant                |
-| **tsgolint** | Type-aware semantic rules    | Requires type analysis |
+| Layer           | Purpose                      | Speed                  |
+| --------------- | ---------------------------- | ---------------------- |
+| **oxlint-ti**   | Syntax & structural analysis | Instant                |
+| **tsgolint-ti** | Type-aware semantic rules    | Requires type analysis |
 
 This architecture keeps the common case extremely fast while enabling powerful type-aware checks when needed.
-Oxlint handles file discovery, configuration, and output formatting, while `tsgolint` executes type-aware rules and emits semantic diagnostics.
+oxlint-ti handles file discovery, configuration, and output formatting, while `tsgolint-ti` executes type-aware rules and emits semantic diagnostics.
 
 ## Why tsgolint exists
 
@@ -119,9 +128,9 @@ This approach introduces several bottlenecks:
 - limited parallelism
 - high memory overhead on large repositories
 
-`tsgolint` takes a different approach: it runs directly on `typescript-go`, avoiding these bottlenecks and allowing semantic analysis to run efficiently alongside Oxlint.
+`tsgolint` takes a different approach: it runs directly on `typescript-go`, avoiding these bottlenecks and allowing semantic analysis to run efficiently alongside Oxlint. `tsgolint-ti` does the same on the TightScript compiler, the TightScript fork of `typescript-go`.
 
-Benchmarks on an Apple M4 Pro compare ESLint + typescript-eslint with `tsgolint`:
+Upstream tsgolint's benchmarks on an Apple M4 Pro compare ESLint + typescript-eslint with `tsgolint`:
 
 | Repository           | ESLint + typescript-eslint | tsgolint | Speedup |
 | -------------------- | -------------------------- | -------- | ------- |
@@ -131,40 +140,6 @@ Benchmarks on an Apple M4 Pro compare ESLint + typescript-eslint with `tsgolint`
 | vuejs/core           | 12.3s                      | 0.95s    | **13x** |
 
 See [benchmarks](./benchmarks/README.md) for detailed performance comparisons.
-
-## Status
-
-`tsgolint` is stable and powers Oxlint's type-aware linting mode. See the [Type-Aware Linting Stable announcement](https://oxc.rs/blog/2026-07-22-type-aware-linting-stable) for details about the stable release.
-
-### Versioning
-
-`tsgolint` is built directly on TypeScript 7, so its versions track the TypeScript release they support. For example, in `v7.0.2001`:
-
-- `7.0.2` is the TypeScript version
-- `001` is the `tsgolint` patch version
-
-A fix released against the same TypeScript version increments the patch suffix, so the next release would be `v7.0.2002`. When the supported TypeScript version changes, the TypeScript portion changes and the patch suffix resets.
-
-Current development focuses on expanding rule coverage and ecosystem integration:
-
-- additional `typescript-eslint` rule support
-- editor integration improvements
-- configuration and rule customization
-- performance improvements for large monorepos
-
-> [!NOTE]
-> We are not currently accepting PRs for new rules beyond what `typescript-eslint` supports, so that we can focus our limited engineering capacity on the items listed above.
-
-For detailed technical documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-## Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
-
-- Development setup and building instructions
-- Testing procedures and guidelines
-- How to implement new rules
-- Code style and contribution workflow
 
 ## Implemented Rules
 
@@ -236,26 +211,6 @@ We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 ## Links
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Detailed technical documentation
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Development and contribution guidelines
 - [Benchmarks](./benchmarks/README.md) - Performance comparison data
-- [typescript-go](https://github.com/microsoft/typescript-go) - Underlying type-analysis backend
+- [tsgolint](https://github.com/oxc-project/tsgolint) - The upstream project
 - [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) - Frontend linter integration
-
-<!-- Badge definitions -->
-
-[npm-badge]: https://img.shields.io/npm/dw/oxlint-tsgolint.svg
-[npm-url]: https://www.npmx.dev/package/oxlint-tsgolint
-[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-[license-url]: LICENSE
-[ci-badge]: https://github.com/oxc-project/tsgolint/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/oxc-project/tsgolint/actions/workflows/ci.yml
-[discord-badge]: https://img.shields.io/discord/1079625926024900739?logo=discord&label=Discord
-[discord-url]: https://discord.gg/9uXCAwqQZW
-
-# [Sponsored By](https://oxc.rs/sponsor)
-
-<p align="center">
-  <a href="https://oxc.rs/sponsor">
-    <img src="https://raw.githubusercontent.com/oxc-project/sponsors/main/sponsors.svg" alt="Our sponsors" />
-  </a>
-</p>

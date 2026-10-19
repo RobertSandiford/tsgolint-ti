@@ -8,7 +8,7 @@ import process from 'node:process';
 
 const npmPackageVersion = requiredEnvVar('TSGOLINT_VERSION');
 
-const NPM_ORG = `oxlint-tsgolint`;
+const NPM_ORG = `tsgolint-ti`;
 
 const GOOS2PROCESS_PLATFORM = {
   windows: 'win32',
@@ -34,12 +34,11 @@ const binariesMatrix = Object.entries(GOOS2PROCESS_PLATFORM).flatMap(
 
 const commonPackageJson = {
   version: npmPackageVersion,
-  description: 'High-performance type-aware TypeScript linter powered by typescript-go, for use with oxlint.',
+  description: 'High-performance type-aware TightScript and TypeScript linter powered by the TightScript compiler, for use with oxlint-ti.',
   license: 'MIT',
-  author: 'auvred <aauvred@gmail.com>',
-  repository: 'github:oxc-project/tsgolint',
-  bugs: 'https://github.com/oxc-project/tsgolint/issues',
-  homepage: 'https://github.com/oxc-project/tsgolint#readme',
+  repository: 'github:RobertSandiford/tsgolint-ti',
+  bugs: 'https://github.com/RobertSandiford/tsgolint-ti/issues',
+  homepage: 'https://github.com/RobertSandiford/tsgolint-ti#readme',
   publishConfig: {
     access: 'public',
   },
@@ -97,7 +96,7 @@ await Promise.all([
         JSON.stringify(
           {
             ...commonPackageJson,
-            name: 'oxlint-tsgolint',
+            name: 'tsgolint-ti',
             bin: {
               tsgolint: './bin/tsgolint.js',
             },

@@ -1,7 +1,8 @@
 {
   "name": "tsgolint",
   "scripts": {
-    "fmt": "dprint fmt"
+    "fmt": "dprint fmt",
+    "release": "node tools/release.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
