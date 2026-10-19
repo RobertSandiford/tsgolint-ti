@@ -65,12 +65,12 @@ await Promise.all([
           path.join(packageDir, 'package.json'),
           JSON.stringify(
             {
+              name: npmPackageName,
               ...commonPackageJson,
               publishConfig: {
                 ...commonPackageJson.publishConfig,
                 executableFiles: [binaryName],
               },
-              name: npmPackageName,
               preferUnplugged: true,
               files: [binaryName],
               os: [platform],
@@ -95,8 +95,8 @@ await Promise.all([
         path.join(packageDir, 'package.json'),
         JSON.stringify(
           {
-            ...commonPackageJson,
             name: 'tsgolint-ti',
+            ...commonPackageJson,
             bin: {
               tsgolint: './bin/tsgolint.js',
             },

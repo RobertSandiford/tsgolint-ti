@@ -2,7 +2,8 @@
 /// <reference lib="es2023" />
 
 // Builds every platform binary, publishes the npm packages and tags the commit.
-// Usage: pnpm release [version] [--dry-run]   (without a version, bumps the latest v* tag)
+// Usage: pnpm release [version] [--dry-run] [--skip-build]   (without a version, bumps the latest v* tag)
+// --skip-build publishes the binaries already in build/, which must be newer than the last commit to their sources.
 
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,9 +24,11 @@ const targets = [
 
 const versionPattern = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 
+const flags = ['--dry-run', '--skip-build'];
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const versionArg = args.find(arg => arg !== '--dry-run');
+const skipBuild = args.includes('--skip-build');
+const versionArg = args.find(arg => !flags.includes(arg));
 
 /**
  * @param {string} command
@@ -101,20 +104,41 @@ if (!run('npm', ['whoami'], { capture: true }).ok) {
   fail('not logged in to npm; run npm login first');
 }
 
-console.log(`release: building ${tag}`);
-for (const { goos, goarch } of targets) {
-  const output = path.join('build', `tsgolint-${goos}-${goarch}`, 'tsgolint');
-  console.log(`release: go build ${goos}/${goarch}`);
-  const built = run('go', ['build', '-ldflags=-s -w', '-trimpath', '-o', output, './cmd/tsgolint'], {
-    env: {
-      GOOS: goos,
-      GOARCH: goarch,
-      CGO_ENABLED: '0',
-      GOCACHE: process.env.GOCACHE ?? path.join(repoRoot, '.gocache'),
-    },
-  });
-  if (!built.ok) {
-    fail(`go build failed for ${goos}/${goarch}`);
+/** @param {{ goos: string, goarch: string }} target */
+const binaryPath = ({ goos, goarch }) => path.join('build', `tsgolint-${goos}-${goarch}`, 'tsgolint');
+
+// Everything that goes into the binary; release tooling and docs can change without a rebuild.
+const binarySources = ['cmd', 'internal', 'shim', 'go.mod', 'go.sum', 'go.work', 'patches', 'typescript-go'];
+
+if (skipBuild) {
+  const lastSourceCommit = run('git', ['log', '-1', '--format=%ct', '--', ...binarySources], { capture: true });
+  const commitTimeMs = Number(lastSourceCommit.stdout) * 1000;
+  for (const target of targets) {
+    const binary = path.join(repoRoot, binaryPath(target));
+    if (!fs.existsSync(binary)) {
+      fail(`--skip-build: ${binaryPath(target)} doesn't exist`);
+    }
+    if (fs.statSync(binary).mtimeMs < commitTimeMs) {
+      fail(`--skip-build: ${binaryPath(target)} is older than the last commit to its sources; rebuild it`);
+    }
+  }
+  console.log(`release: using the binaries already in build/ for ${tag}`);
+} else {
+  console.log(`release: building ${tag}`);
+  for (const target of targets) {
+    const { goos, goarch } = target;
+    console.log(`release: go build ${goos}/${goarch}`);
+    const built = run('go', ['build', '-ldflags=-s -w', '-trimpath', '-o', binaryPath(target), './cmd/tsgolint'], {
+      env: {
+        GOOS: goos,
+        GOARCH: goarch,
+        CGO_ENABLED: '0',
+        GOCACHE: process.env.GOCACHE ?? path.join(repoRoot, '.gocache'),
+      },
+    });
+    if (!built.ok) {
+      fail(`go build failed for ${goos}/${goarch}`);
+    }
   }
 }
 
