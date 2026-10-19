@@ -1,10 +1,12 @@
 {
   "ExtraFunctions": [
     "isNonDeferredTypeReference",
-    "getMappedTypeModifiers"
+    "getMappedTypeModifiers",
+    "isPermissionAssertionArgument"
   ],
   "ExtraMethods": {
     "Checker": [
+      "isMarkerAssertionTypeNode",
       "getBaseConstraintOfType",
       "getAssignmentReducedType",
       "getUnionTypeEx",

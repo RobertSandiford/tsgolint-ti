@@ -18,7 +18,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-const tsgoInternalPrefix = "github.com/microsoft/typescript-go/internal/"
+const tsgoInternalPrefix = "github.com/microsoft/TypeScript/tsc/internal/"
 
 func signatureHasUnexportedType(t types.Signature) bool {
 	if params := t.Params(); params != nil {
@@ -36,6 +36,77 @@ func signatureHasUnexportedType(t types.Signature) bool {
 		}
 	}
 	return false
+}
+
+func typeReferencesUnexported(t types.Type) bool {
+	switch t := types.Unalias(t).(type) {
+	case *types.Named:
+		if t.Obj().Pkg() != nil && !t.Obj().Exported() {
+			return true
+		}
+		for arg := range t.TypeArgs().Types() {
+			if typeReferencesUnexported(arg) {
+				return true
+			}
+		}
+	case *types.Pointer:
+		return typeReferencesUnexported(t.Elem())
+	case *types.Slice:
+		return typeReferencesUnexported(t.Elem())
+	case *types.Array:
+		return typeReferencesUnexported(t.Elem())
+	case *types.Chan:
+		return typeReferencesUnexported(t.Elem())
+	case *types.Map:
+		return typeReferencesUnexported(t.Key()) || typeReferencesUnexported(t.Elem())
+	case *types.Signature:
+		for v := range t.Params().Variables() {
+			if typeReferencesUnexported(v.Type()) {
+				return true
+			}
+		}
+		for v := range t.Results().Variables() {
+			if typeReferencesUnexported(v.Type()) {
+				return true
+			}
+		}
+	case *types.Struct:
+		for field := range t.Fields() {
+			if typeReferencesUnexported(field.Type()) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// layoutTypeString spells a type with the same memory layout as t, avoiding unexported names a mirror struct cannot reference.
+func layoutTypeString(t types.Type, qualifier types.Qualifier) string {
+	if !typeReferencesUnexported(t) {
+		return types.TypeString(t, qualifier)
+	}
+	switch t := types.Unalias(t).(type) {
+	case *types.Named:
+		return layoutTypeString(t.Underlying(), qualifier)
+	case *types.Pointer, *types.Map, *types.Chan, *types.Signature:
+		return "unsafe.Pointer"
+	case *types.Slice:
+		return "[]byte"
+	case *types.Array:
+		return fmt.Sprintf("[%d]%s", t.Len(), layoutTypeString(t.Elem(), qualifier))
+	case *types.Struct:
+		var b strings.Builder
+		b.WriteString("struct {")
+		for field := range t.Fields() {
+			b.WriteString(" _ ")
+			b.WriteString(layoutTypeString(field.Type(), qualifier))
+			b.WriteString(";")
+		}
+		b.WriteString(" }")
+		return b.String()
+	}
+	log.Fatalf("no layout equivalent for %v", t)
+	return ""
 }
 
 type ExtraShim struct {
@@ -315,18 +386,14 @@ func main() {
 											string
 											*types.Struct
 										}{n, strct})
-										shimBuilder.WriteString("extra_")
+										shimBuilder.WriteString("*extra_")
 										shimBuilder.WriteString(n)
 										continue
 									}
 								}
 							}
 
-							fieldType := types.TypeString(field.Type(), qualifierOnlyPackageName)
-							// TODO: move to extra-shim.json
-							fieldType = strings.ReplaceAll(fieldType, "checker.thisAssignmentDeclarationKind", "int32")
-							fieldType = strings.ReplaceAll(fieldType, "checker.symbolTableID", "uint64")
-							shimBuilder.WriteString(fieldType)
+							shimBuilder.WriteString(layoutTypeString(field.Type(), qualifierOnlyPackageName))
 						}
 						shimBuilder.WriteString("\n}\n")
 
@@ -341,6 +408,9 @@ func main() {
 					}
 
 					emitExtraStruct(name, strct)
+					// A negative array length fails the build when the mirror's size drifts from the real struct.
+					fmt.Fprintf(&shimBuilder, "var _ [unsafe.Sizeof(%[1]s{}) - unsafe.Sizeof(%[2]s.%[3]s{})]struct{}\n", mirrorStructName, pkg.Name, name)
+					fmt.Fprintf(&shimBuilder, "var _ [unsafe.Sizeof(%[2]s.%[3]s{}) - unsafe.Sizeof(%[1]s{})]struct{}\n", mirrorStructName, pkg.Name, name)
 
 					mappedFieldTypes := make(map[string]*types.Var, strct.NumFields())
 					for field := range strct.Fields() {

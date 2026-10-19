@@ -10,6 +10,18 @@ import (
 func TestNoUnsafeTypeAssertionRule_BasicAssertions(t *testing.T) {
 	t.Parallel()
 	rule_tester.RunRuleTester(fixtures.GetRootDir(), "tsconfig.minimal.json", t, &NoUnsafeTypeAssertionRule, []rule_tester.ValidTestCase{
+		{
+			Code: `
+const make = (req: string) => ({ req } as owned);
+      `,
+			TSConfig: "./tsconfig.objectCreationExact.json",
+		},
+		{
+			Code: `
+const created = { a: 'a' } as exact;
+      `,
+			TSConfig: "./tsconfig.objectCreationExact.json",
+		},
 		{Code: `
 declare const a: string;
 a as string | number;

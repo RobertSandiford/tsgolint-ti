@@ -1,0 +1,54 @@
+From e65f4937fa672bcb9b60921c46478eb6015280cc Mon Sep 17 00:00:00 2001
+From: RobertSandiford <->
+Date: Fri, 16 Oct 2026 11:15:40 +0100
+Subject: [PATCH 5/5] feat(project): expose tsconfig resolution to tsgolint
+
+---
+ tsc/internal/project/tsgolint.go | 38 ++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+ create mode 100644 tsc/internal/project/tsgolint.go
+
+diff --git a/tsc/internal/project/tsgolint.go b/tsc/internal/project/tsgolint.go
+new file mode 100644
+index 0000000000..397ca15e1d
+--- /dev/null
++++ b/tsc/internal/project/tsgolint.go
+@@ -0,0 +1,38 @@
++package project
++
++import (
++	"github.com/microsoft/TypeScript/tsc/internal/lsp/lsproto"
++	"github.com/microsoft/TypeScript/tsc/internal/tsoptions"
++	"github.com/microsoft/TypeScript/tsc/internal/tspath"
++	"github.com/microsoft/TypeScript/tsc/internal/vfs"
++)
++
++// TsGoLintConfigResolver exposes the config file registry's tsconfig lookup to tsgolint.
++type TsGoLintConfigResolver struct {
++	builder *configFileRegistryBuilder
++}
++
++func NewTsGoLintConfigResolver(fs vfs.FS, currentDirectory string) *TsGoLintConfigResolver {
++	toPath := func(fileName string) tspath.Path {
++		return tspath.ToPath(fileName, currentDirectory, fs.UseCaseSensitiveFileNames())
++	}
++	layeredFS := layerOverlayFileSystem(fs, nil, lsproto.PositionEncodingKindUTF16, toPath)
++	snapshotFS := newSnapshotFSBuilderFromSource(layeredFS, nil, nil, nil, toPath)
++	isOpenFile := func(tspath.Path) bool { return false }
++	sessionOptions := &SessionOptions{CurrentDirectory: currentDirectory}
++	return &TsGoLintConfigResolver{
++		builder: newConfigFileRegistryBuilder(false, snapshotFS, isOpenFile, &ConfigFileRegistry{}, NewExtendedConfigCache(), 0, sessionOptions, "", nil),
++	}
++}
++
++func (r *TsGoLintConfigResolver) ComputeConfigFileName(fileName string, skipSearchInDirectoryOfFile bool) string {
++	return r.builder.computeConfigFileName(fileName, skipSearchInDirectoryOfFile, nil)
++}
++
++func (r *TsGoLintConfigResolver) GetAncestorConfigFileName(fileName string, path tspath.Path, configFileName string) string {
++	return r.builder.getAncestorConfigFileName(fileName, path, configFileName, nil)
++}
++
++func (r *TsGoLintConfigResolver) AcquireConfigForFile(configFileName string, configFilePath tspath.Path, filePath tspath.Path) *tsoptions.ParsedCommandLine {
++	return r.builder.findOrAcquireConfigForFile(configFileName, configFilePath, filePath, projectLoadKindCreate, nil)
++}

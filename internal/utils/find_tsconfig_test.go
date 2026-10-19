@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/microsoft/typescript-go/shim/vfs"
-	"github.com/microsoft/typescript-go/shim/vfs/osvfs"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs/osvfs"
 	"github.com/typescript-eslint/tsgolint/internal/rules/fixtures"
 	"gotest.tools/v3/assert"
 )
@@ -41,7 +41,7 @@ func TestFindTsConfigParallel_CaseInsensitivePaths(t *testing.T) {
 			fs := caseSensitivityFS{FS: osvfs.FS(), caseSensitive: tc.caseSensitive}
 			resolver := NewTsConfigResolver(fs, rootDir)
 			results := resolver.FindTsConfigParallel([]string{inputFile})
-			assert.Equal(t, tc.expected, results[inputFile])
+			assert.Equal(t, filepath.ToSlash(tc.expected), results[inputFile])
 		})
 	}
 }
@@ -98,7 +98,7 @@ func TestFindTsconfigForFile(t *testing.T) {
 
 			assert.Equal(t, tc.expectedFound, found,
 				"Found flag should be %v for %s", tc.expectedFound, tc.fileName)
-			assert.Equal(t, tc.expectedConfig, config,
+			assert.Equal(t, filepath.ToSlash(tc.expectedConfig), config,
 				"Config path should be %s for %s", tc.expectedConfig, tc.fileName)
 
 			if found && config != "" {
@@ -177,7 +177,7 @@ func TestFindTsConfigParallel(t *testing.T) {
 			for filePath, expectedConfig := range tc.expectedResults {
 				actualConfig, exists := results[filePath]
 				assert.Assert(t, exists, "Result should exist for %s", filePath)
-				assert.Equal(t, expectedConfig, actualConfig,
+				assert.Equal(t, filepath.ToSlash(expectedConfig), actualConfig,
 					"Config path should match for %s", filePath)
 
 				if actualConfig != "" {
@@ -219,15 +219,15 @@ func TestFindTsConfigParallel_UsesAncestorConfigWhenNearestConfigExcludesFile(t 
 
 	config, found := resolver.FindTsconfigForFile(filePath, false)
 	assert.Equal(t, true, found)
-	assert.Equal(t, rootConfigPath, config)
+	assert.Equal(t, filepath.ToSlash(rootConfigPath), config)
 
 	results := resolver.FindTsConfigParallel(filePaths)
 	for _, file := range filePaths {
 		if file != keptFilePath {
-			assert.Equal(t, rootConfigPath, results[file])
+			assert.Equal(t, filepath.ToSlash(rootConfigPath), results[file])
 		}
 	}
-	assert.Equal(t, nestedConfigPath, results[keptFilePath])
+	assert.Equal(t, filepath.ToSlash(nestedConfigPath), results[keptFilePath])
 }
 
 // TestFindTsConfigParallel_Consistency verifies that the parallel

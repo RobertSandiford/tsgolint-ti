@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
+	"github.com/microsoft/TypeScript/tsc/shim/ast"
+	"github.com/microsoft/TypeScript/tsc/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
@@ -195,6 +195,10 @@ var NoRedundantTypeConstituentsRule = rule.Rule{
 
 		return rule.RuleListeners{
 			ast.KindIntersectionType: func(node *ast.Node) {
+				// TightScript type parameter hints, as in `<owned exact? T>`, are an intersection of keywords, not of types.
+				if ast.IsTypeParameterDeclaration(node.Parent) && node.Parent.AsTypeParameterDeclaration().Permission == node {
+					return
+				}
 				seenBigIntLiteralTypes := []typeFlagsWithNodeOrType{}
 				seenBooleanLiteralTypes := []typeFlagsWithNodeOrType{}
 				seenNumberLiteralTypes := []typeFlagsWithNodeOrType{}

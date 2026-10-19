@@ -10,6 +10,15 @@ import (
 func TestNoUnsafeReturnRule(t *testing.T) {
 	t.Parallel()
 	rule_tester.RunRuleTester(fixtures.GetRootDir(), "tsconfig.noImplicitThis.json", t, &NoUnsafeReturnRule, []rule_tester.ValidTestCase{
+		{
+			Code: `
+const proxyValue = (value: lazy all unknown): lazy all unknown => {
+  if (Array.isArray(value)) return value;
+  return value;
+};
+      `,
+			TSConfig: "./tsconfig.permissionModifiers.json",
+		},
 		{Code: `
 function foo() {
   return;

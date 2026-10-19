@@ -1,17 +1,17 @@
-From d346e71fc7744762a8887fe2fd62f650d9dff2f2 Mon Sep 17 00:00:00 2001
+From 911c3347cfc6d783254f222d5c8eda37587787f9 Mon Sep 17 00:00:00 2001
 From: Cameron Clark <cameron.clark@hey.com>
 Date: Mon, 3 Nov 2025 12:44:32 +0000
-Subject: [PATCH 3/5] fix: early return from invalid tsconfig for better errors
+Subject: [PATCH 2/5] fix: early return from invalid tsconfig for better errors
 
 ---
- internal/tsoptions/tsconfigparsing.go | 11 +++++++++++
+ tsc/internal/tsoptions/tsconfigparsing.go | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/internal/tsoptions/tsconfigparsing.go b/internal/tsoptions/tsconfigparsing.go
-index 4f8578275..d951bc845 100644
---- a/internal/tsoptions/tsconfigparsing.go
-+++ b/internal/tsoptions/tsconfigparsing.go
-@@ -189,6 +189,17 @@ func parseOwnConfigOfJsonSourceFile(
+diff --git a/tsc/internal/tsoptions/tsconfigparsing.go b/tsc/internal/tsoptions/tsconfigparsing.go
+index 8f50493b27..bcaa7d2aea 100644
+--- a/tsc/internal/tsoptions/tsconfigparsing.go
++++ b/tsc/internal/tsoptions/tsconfigparsing.go
+@@ -186,6 +186,17 @@ func parseOwnConfigOfJsonSourceFile(
  	var extendedConfigPath any
  	var rootCompilerOptions []*ast.PropertyName
  	var errors []*ast.Diagnostic

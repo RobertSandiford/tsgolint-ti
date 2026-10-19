@@ -1,21 +1,23 @@
 package utils
 
 import (
-	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/compiler"
-	"github.com/microsoft/typescript-go/shim/core"
+	"github.com/microsoft/TypeScript/tsc/shim/ast"
+	"github.com/microsoft/TypeScript/tsc/shim/compiler"
+	"github.com/microsoft/TypeScript/tsc/shim/core"
 
-	"github.com/microsoft/typescript-go/shim/parser"
-	"github.com/microsoft/typescript-go/shim/tsoptions"
-	"github.com/microsoft/typescript-go/shim/tspath"
-	"github.com/microsoft/typescript-go/shim/vfs"
-	"github.com/microsoft/typescript-go/shim/vfs/cachedvfs"
+	"github.com/microsoft/TypeScript/tsc/shim/parser"
+	"github.com/microsoft/TypeScript/tsc/shim/tsoptions"
+	"github.com/microsoft/TypeScript/tsc/shim/tspath"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs/cachedvfs"
 	"github.com/typescript-eslint/tsgolint/internal/collections"
 )
 
 var _ compiler.CompilerHost = (*compilerHost)(nil)
 
 type compilerHost struct {
+	// Supplies the content-mapper methods, with content mappers disabled.
+	compiler.CompilerHost
 	currentDirectory          string
 	fs                        vfs.FS
 	defaultLibraryPath        string
@@ -45,6 +47,7 @@ func NewCompilerHost(
 		trace = func(msg *ast.DiagnosticsMessage, args ...any) {}
 	}
 	return &compilerHost{
+		CompilerHost:        compiler.NewCompilerHost(currentDirectory, fs, defaultLibraryPath, extendedConfigCache, trace, nil),
 		currentDirectory:    currentDirectory,
 		fs:                  fs,
 		defaultLibraryPath:  defaultLibraryPath,

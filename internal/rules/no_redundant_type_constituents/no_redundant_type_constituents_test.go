@@ -23,6 +23,8 @@ func TestNoRedundantTypeConstituentsRule(t *testing.T) {
       type U = T | 3;
       type V = U;
     `},
+		{Code: "function f<owned exact? T>(x: T): T { return x; }"},
+		{Code: "function f<owned exact T>(x: T): T { return x; }"},
 		{Code: "type T = () => never;"},
 		{Code: "type T = () => never | string;"},
 		{Code: `

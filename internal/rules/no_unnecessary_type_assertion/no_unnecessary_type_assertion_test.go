@@ -11,6 +11,40 @@ func TestNoUnnecessaryTypeAssertion(t *testing.T) {
 	t.Parallel()
 	rule_tester.RunRuleTester(fixtures.GetRootDir(), "tsconfig.minimal.json", t, &NoUnnecessaryTypeAssertionRule, []rule_tester.ValidTestCase{
 		{Code: `
+type SplitResult = { context?: object; networked?: object };
+declare const stage: object | undefined;
+const split = stage as SplitResult | undefined;
+    `},
+		{
+			Code: `
+type SplitResult = { context?: object; networked?: object };
+declare const stage: object | undefined;
+const split = stage as SplitResult | undefined;
+      `,
+			TSConfig: "./tsconfig.permissionModifiers.json",
+		},
+		{Code: `
+declare const value: string;
+const incomplete = value as   ;
+    `},
+		{
+			Code: `
+declare function take<T>(): T;
+const make = (req: string) => ({ req } as owned);
+type Ctx = ReturnType<typeof make>;
+export const ctx = take<Ctx>();
+      `,
+			TSConfig: "./tsconfig.objectCreationExact.json",
+		},
+		{
+			Code: `
+export const o = { a: 'foo' } as owned;
+declare function takeValue<T>(x: T): T;
+export const passed = takeValue<typeof o>(o);
+      `,
+			TSConfig: "./tsconfig.objectCreationExact.json",
+		},
+		{Code: `
 import { TSESTree } from '@typescript-eslint/utils';
 declare const member: TSESTree.TSEnumMember;
 if (

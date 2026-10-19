@@ -3,9 +3,9 @@ package no_unsafe_return
 import (
 	"fmt"
 
-	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
-	"github.com/microsoft/typescript-go/shim/core"
+	"github.com/microsoft/TypeScript/tsc/shim/ast"
+	"github.com/microsoft/TypeScript/tsc/shim/checker"
+	"github.com/microsoft/TypeScript/tsc/shim/core"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
@@ -118,7 +118,7 @@ var NoUnsafeReturnRule = rule.Rule{
 			// function return type, we shouldn't complain (it's intentional, even if unsafe)
 			if functionNode.Type() != nil {
 				for _, signature := range callSignatures {
-					signatureReturnType := checker.Checker_getReturnTypeOfSignature(ctx.TypeChecker, signature)
+					signatureReturnType := ctx.TypeChecker.GetTypeWithoutLazyPermissions(checker.Checker_getReturnTypeOfSignature(ctx.TypeChecker, signature))
 
 					if returnNodeType == signatureReturnType ||
 						utils.IsTypeFlagSet(
@@ -142,7 +142,7 @@ var NoUnsafeReturnRule = rule.Rule{
 				// Allow cases when the declared return type of the function is either unknown or unknown[]
 				// and the function is returning any or any[].
 				for _, signature := range callSignatures {
-					functionReturnType := checker.Checker_getReturnTypeOfSignature(ctx.TypeChecker, signature)
+					functionReturnType := ctx.TypeChecker.GetTypeWithoutLazyPermissions(checker.Checker_getReturnTypeOfSignature(ctx.TypeChecker, signature))
 					if anyType == utils.DiscriminatedAnyTypeAny && utils.IsTypeUnknownType(functionReturnType) {
 						return
 					}

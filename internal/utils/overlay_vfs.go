@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/microsoft/typescript-go/shim/bundled"
-	"github.com/microsoft/typescript-go/shim/tspath"
-	"github.com/microsoft/typescript-go/shim/vfs"
-	"github.com/microsoft/typescript-go/shim/vfs/osvfs"
+	"github.com/microsoft/TypeScript/tsc/shim/bundled"
+	"github.com/microsoft/TypeScript/tsc/shim/tspath"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs/osvfs"
 )
 
 type OverlayVFS struct {
@@ -125,11 +125,6 @@ func (vfs *OverlayVFS) Stat(path string) vfs.FileInfo {
 		}
 	}
 	return vfs.fs.Stat(path)
-}
-
-func (vfs *OverlayVFS) WalkDir(root string, walkFn vfs.WalkDirFunc) error {
-	// TODO: do we need to walk over virtual files here as well?
-	return vfs.fs.WalkDir(root, walkFn)
 }
 
 func (vfs *OverlayVFS) Realpath(path string) string {

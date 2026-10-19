@@ -3,10 +3,10 @@ package no_unnecessary_type_assertion
 import (
 	"slices"
 
-	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
-	"github.com/microsoft/typescript-go/shim/core"
-	"github.com/microsoft/typescript-go/shim/scanner"
+	"github.com/microsoft/TypeScript/tsc/shim/ast"
+	"github.com/microsoft/TypeScript/tsc/shim/checker"
+	"github.com/microsoft/TypeScript/tsc/shim/core"
+	"github.com/microsoft/TypeScript/tsc/shim/scanner"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
@@ -240,6 +240,11 @@ var NoUnnecessaryTypeAssertionRule = rule.Rule{
 			}, map[*checker.Type]struct{}{}, map[*checker.Signature]struct{}{})
 		}
 
+		// Checks each union member: a union never carries the `object` keyword's flag itself.
+		hasNonPrimitivePart := func(t *checker.Type) bool {
+			return slices.ContainsFunc(utils.UnionTypeParts(t), ctx.TypeChecker.IsObjectKeywordType)
+		}
+
 		hasIndexSignature := func(t *checker.Type) bool {
 			return slices.ContainsFunc(utils.UnionTypeParts(t), func(part *checker.Type) bool {
 				return len(checker.Checker_getIndexInfosOfType(ctx.TypeChecker, part)) > 0
@@ -370,6 +375,9 @@ var NoUnnecessaryTypeAssertionRule = rule.Rule{
 
 		isTypeUnchanged := func(node *ast.Node, expression *ast.Node, uncast, cast *checker.Type) bool {
 			expression = ast.SkipParentheses(expression)
+			if ctx.TypeChecker.AssertionAffectsPermissions(node) {
+				return false
+			}
 			if uncast == cast {
 				return true
 			}
@@ -399,7 +407,7 @@ var NoUnnecessaryTypeAssertionRule = rule.Rule{
 				return areUnionPartsEquivalentIgnoringUndefined(uncast, cast)
 			}
 
-			if (utils.IsTypeFlagSet(uncast, checker.TypeFlagsNonPrimitive) && !utils.IsTypeFlagSet(cast, checker.TypeFlagsNonPrimitive)) ||
+			if (hasNonPrimitivePart(uncast) && !hasNonPrimitivePart(cast)) ||
 				(hasIndexSignature(uncast) != hasIndexSignature(cast)) {
 				return false
 			}

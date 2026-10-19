@@ -1,28 +1,35 @@
-From 37c294c9b5621171de72ec92584142b9bdd56b0d Mon Sep 17 00:00:00 2001
+From 108a1ac972c12a01be0d06b9b106448123f8aa4f Mon Sep 17 00:00:00 2001
 From: Cameron Clark <cameron.clark@hey.com>
 Date: Fri, 13 Feb 2026 18:37:25 +0000
-Subject: [PATCH 4/5] fix(collections): avoid internal json import in
+Subject: [PATCH 3/5] fix(collections): avoid internal json import in
  ordered_map
 
 ---
- internal/collections/ordered_map.go | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+ tsc/internal/collections/ordered_map.go | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/internal/collections/ordered_map.go b/internal/collections/ordered_map.go
-index df66ec640..02f0a5678 100644
---- a/internal/collections/ordered_map.go
-+++ b/internal/collections/ordered_map.go
-@@ -9,7 +9,8 @@ import (
+diff --git a/tsc/internal/collections/ordered_map.go b/tsc/internal/collections/ordered_map.go
+index d4d84f3f8e..3c3ae2a71b 100644
+--- a/tsc/internal/collections/ordered_map.go
++++ b/tsc/internal/collections/ordered_map.go
+@@ -2,14 +2,14 @@ package collections
+ 
+ import (
+ 	"encoding"
++	"encoding/json/jsontext"
++	"encoding/json/v2"
+ 	"errors"
+ 	"iter"
+ 	"maps"
+ 	"reflect"
  	"slices"
  	"strconv"
- 
--	"github.com/microsoft/typescript-go/internal/json"
-+	"github.com/go-json-experiment/json"
-+	"github.com/go-json-experiment/json/jsontext"
+-
+-	"github.com/microsoft/TypeScript/tsc/internal/json"
  )
  
  // OrderedMap is an insertion ordered map.
-@@ -214,8 +215,8 @@ func (m *OrderedMap[K, V]) clone() OrderedMap[K, V] {
+@@ -214,8 +214,8 @@ func (m *OrderedMap[K, V]) clone() OrderedMap[K, V] {
  
  var _ json.MarshalerTo = (*OrderedMap[string, string])(nil)
  
@@ -33,7 +40,7 @@ index df66ec640..02f0a5678 100644
  		return err
  	}
  
-@@ -235,7 +236,7 @@ func (m *OrderedMap[K, V]) MarshalJSONTo(enc *json.Encoder) error {
+@@ -235,7 +235,7 @@ func (m *OrderedMap[K, V]) MarshalJSONTo(enc *json.Encoder) error {
  		}
  	}
  
@@ -42,7 +49,7 @@ index df66ec640..02f0a5678 100644
  }
  
  func resolveKeyName(k reflect.Value) (string, error) {
-@@ -260,22 +261,22 @@ func resolveKeyName(k reflect.Value) (string, error) {
+@@ -260,22 +260,22 @@ func resolveKeyName(k reflect.Value) (string, error) {
  
  var _ json.UnmarshalerFrom = (*OrderedMap[string, string])(nil)
  

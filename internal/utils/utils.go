@@ -6,14 +6,17 @@ import (
 	"unicode"
 
 	"github.com/go-json-experiment/json"
-	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
-	"github.com/microsoft/typescript-go/shim/core"
-	"github.com/microsoft/typescript-go/shim/scanner"
+	"github.com/microsoft/TypeScript/tsc/shim/ast"
+	"github.com/microsoft/TypeScript/tsc/shim/checker"
+	"github.com/microsoft/TypeScript/tsc/shim/core"
+	"github.com/microsoft/TypeScript/tsc/shim/scanner"
 )
 
 func TrimNodeTextRange(sourceFile *ast.SourceFile, node *ast.Node) core.TextRange {
-	return scanner.GetRangeOfTokenAtPosition(sourceFile, node.Pos()).WithEnd(node.End())
+	start := scanner.GetRangeOfTokenAtPosition(sourceFile, node.Pos()).Pos()
+	// A missing node, as in `x as ;` while typing, is empty, and the token found from its position is the next one.
+	start = min(start, node.End())
+	return core.NewTextRange(start, node.End())
 }
 
 var commentRangeNodeFactory = ast.NewNodeFactory(ast.NodeFactoryHooks{})
@@ -166,7 +169,7 @@ func FindModifier(node interface{ Modifiers() *ast.ModifierList }, modifier ast.
 	return nil
 }
 
-// Source: https://github.com/microsoft/typescript-go/blob/5652e65d5ae944375676d3955f9755e554576d41/internal/jsnum/string.go#L99
+// Source: https://github.com/microsoft/TypeScript/tsc/blob/5652e65d5ae944375676d3955f9755e554576d41/internal/jsnum/string.go#L99
 func IsStrWhiteSpace(r rune) bool {
 	// This is different than stringutil.IsWhiteSpaceLike.
 

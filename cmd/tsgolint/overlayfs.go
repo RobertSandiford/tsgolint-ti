@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/microsoft/typescript-go/shim/tspath"
-	"github.com/microsoft/typescript-go/shim/vfs"
+	"github.com/microsoft/TypeScript/tsc/shim/tspath"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs"
 )
 
 type overlayFS struct {
@@ -71,10 +71,6 @@ func (o *overlayFS) GetAccessibleEntries(path string) vfs.Entries {
 
 func (o *overlayFS) Stat(path string) vfs.FileInfo {
 	return o.underlying.Stat(path)
-}
-
-func (o *overlayFS) WalkDir(root string, walkFn vfs.WalkDirFunc) error {
-	return o.underlying.WalkDir(root, walkFn)
 }
 
 func (o *overlayFS) Realpath(path string) string {

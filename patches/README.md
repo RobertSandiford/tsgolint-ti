@@ -1,11 +1,15 @@
 # Patches
 
-`0006-perf-add-opt-in-node-count-checker-assignment.patch` enables descending
-node-count round-robin assignment only when `OXLINT_TSGOLINT_CHECKER_SCHEDULING=sorted`.
-It sorts a stable copy of the program files, including declarations, before
-associating them with checkers. Program order is unchanged, and single-checker
-pools skip sorting. All other values retain the original assignment. See the
-[checker scheduling options](https://github.com/oxc-project/tsgolint/pull/1240).
+These patches apply to the TightScript fork of TypeScript (`tsc/` in
+`RobertSandiford/TypeScript`, branch `tightscript`), not to `microsoft/typescript-go`.
+
+`0005-feat-project-expose-tsconfig-resolution-to-tsgolint.patch` adds one file to
+the `project` package with exported wrappers for the config file registry's tsconfig
+lookup. It replaces upstream tsgolint's patch that renamed the package's private
+identifiers, which no longer applied.
+
+Upstream tsgolint's opt-in `OXLINT_TSGOLINT_CHECKER_SCHEDULING=sorted` patch is
+dropped: typescript-go now assigns files to checkers by weight itself.
 
 These patches do not change the behavior of typescript-go.
 The main purpose of the patches is to tune tsgo performance a bit.

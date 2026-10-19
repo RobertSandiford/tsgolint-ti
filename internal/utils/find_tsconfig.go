@@ -4,36 +4,32 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/microsoft/typescript-go/shim/core"
-	"github.com/microsoft/typescript-go/shim/project"
-	"github.com/microsoft/typescript-go/shim/tsoptions"
-	"github.com/microsoft/typescript-go/shim/tspath"
-	"github.com/microsoft/typescript-go/shim/vfs"
+	"github.com/microsoft/TypeScript/tsc/shim/core"
+	"github.com/microsoft/TypeScript/tsc/shim/project"
+	"github.com/microsoft/TypeScript/tsc/shim/tsoptions"
+	"github.com/microsoft/TypeScript/tsc/shim/tspath"
+	"github.com/microsoft/TypeScript/tsc/shim/vfs"
 	"github.com/typescript-eslint/tsgolint/internal/collections"
 )
 
 type TsConfigResolver struct {
 	fs                        vfs.FS
 	currentDirectory          string
-	configFileRegistryBuilder *project.ConfigFileRegistryBuilder
+	configFileRegistryBuilder *project.TsGoLintConfigResolver
 }
 
 func NewTsConfigResolver(fs vfs.FS, currentDirectory string) *TsConfigResolver {
 	return &TsConfigResolver{
-		fs:               fs,
-		currentDirectory: currentDirectory,
-		configFileRegistryBuilder: project.NewConfigFileRegistryBuilder(
-			false,
-			project.TsGoLintNewSnapshotFSBuilder(fs, currentDirectory), &project.ConfigFileRegistry{}, project.NewExtendedConfigCache(), 0, &project.SessionOptions{
-				CurrentDirectory: currentDirectory,
-			}, "", nil),
+		fs:                        fs,
+		currentDirectory:          currentDirectory,
+		configFileRegistryBuilder: project.NewTsGoLintConfigResolver(fs, currentDirectory),
 	}
 }
 
 // Finds the tsconfig.json that governs the given file
 // Reference: `findOrCreateDefaultConfiguredProjectForOpenScriptInfo` typescript-go/internal/project/projectcollectionbuilder.go:629-671
 func (r *TsConfigResolver) FindTsconfigForFile(filePath string, skipSearchInDirectoryOfFile bool) (configPath string, found bool) {
-	configFileName := r.configFileRegistryBuilder.ComputeConfigFileName(filePath, skipSearchInDirectoryOfFile, nil)
+	configFileName := r.configFileRegistryBuilder.ComputeConfigFileName(filePath, skipSearchInDirectoryOfFile)
 
 	if configFileName == "" {
 		return "", false
@@ -89,9 +85,7 @@ func (r *TsConfigResolver) findConfigWithReferences(
 		func(node searchNode) (isResult bool, stop bool) {
 			configFilePath := r.toPath(node.configFileName)
 
-			config := r.configFileRegistryBuilder.FindOrAcquireConfigForFile(
-				node.configFileName, configFilePath, path, project.ProjectLoadKindCreate, nil,
-			)
+			config := r.configFileRegistryBuilder.AcquireConfigForFile(node.configFileName, configFilePath, path)
 			if config == nil {
 				return false, false
 			}
@@ -164,13 +158,13 @@ func (r *TsConfigResolver) findConfigWithReferences(
 }
 
 func (r *TsConfigResolver) getAncestorConfigFileName(fileName string, path tspath.Path, nearestConfigFileName string) string {
-	ancestorConfigName := r.configFileRegistryBuilder.GetAncestorConfigFileName(fileName, path, nearestConfigFileName, nil)
+	ancestorConfigName := r.configFileRegistryBuilder.GetAncestorConfigFileName(fileName, path, nearestConfigFileName)
 	if ancestorConfigName != "" {
 		return ancestorConfigName
 	}
 	// Intentionally pass the nearest tsconfig path so the ancestor search
 	// resumes from that config's parent directory rather than from the source file.
-	return r.configFileRegistryBuilder.ComputeConfigFileName(nearestConfigFileName, true, nil)
+	return r.configFileRegistryBuilder.ComputeConfigFileName(nearestConfigFileName, true)
 }
 
 type ResolutionResult struct {
@@ -204,13 +198,11 @@ func (r *TsConfigResolver) work(in chan resolutionTask, out chan<- ResolutionRes
 func (r *TsConfigResolver) resolveDirectory(files []string, in chan<- resolutionTask, out chan<- ResolutionResult, pending *sync.WaitGroup) {
 	// ComputeConfigFileName only inspects the containing directory and its
 	// ancestors. Files in one directory therefore share this lookup.
-	configName := r.configFileRegistryBuilder.ComputeConfigFileName(files[0], false, nil)
+	configName := r.configFileRegistryBuilder.ComputeConfigFileName(files[0], false)
 	var includedFiles map[tspath.Path]string
 	if configName != "" {
 		configPath := r.toPath(configName)
-		config := r.configFileRegistryBuilder.FindOrAcquireConfigForFile(
-			configName, configPath, r.toPath(files[0]), project.ProjectLoadKindCreate, nil,
-		)
+		config := r.configFileRegistryBuilder.AcquireConfigForFile(configName, configPath, r.toPath(files[0]))
 		if config != nil {
 			// A file included by the nearest config cannot be claimed by a
 			// reference or ancestor. Only misses need the full search.

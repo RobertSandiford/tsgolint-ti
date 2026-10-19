@@ -1,4 +1,5 @@
 [submodule "typescript-go"]
 	path = typescript-go
-	url = https://github.com/microsoft/typescript-go
+	url = https://github.com/RobertSandiford/TypeScript.git
 	ignore = dirty
+	branch = tightscript
