@@ -90,8 +90,19 @@ function chooseVersion() {
   return bump(latestTag.stdout.slice(1));
 }
 
-if (run('git', ['status', '--porcelain'], { capture: true }).stdout !== '') {
+if (run('git', ['status', '--porcelain', '--ignore-submodules=all'], { capture: true }).stdout !== '') {
   fail('the working tree has uncommitted changes; commit or stash them first');
+}
+
+// typescript-go always shows as modified: it's checked out as the committed commit with patches/ applied on top
+const patchCount = fs.readdirSync(path.join(repoRoot, 'patches')).filter(name => name.endsWith('.patch')).length;
+const committedFork = run('git', ['rev-parse', 'HEAD:typescript-go'], { capture: true }).stdout;
+const checkedOutFork = run('git', ['-C', 'typescript-go', 'rev-parse', `HEAD~${patchCount}`], { capture: true }).stdout;
+if (checkedOutFork !== committedFork) {
+  fail(`typescript-go isn't the committed ${committedFork.slice(0, 10)} plus the ${patchCount} patches; run just init`);
+}
+if (run('git', ['-C', 'typescript-go', 'status', '--porcelain'], { capture: true }).stdout !== '') {
+  fail('typescript-go has uncommitted changes; turn them into a patch or discard them');
 }
 
 const version = chooseVersion();
