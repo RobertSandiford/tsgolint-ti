@@ -246,6 +246,7 @@ type extra_Checker struct {
   cachedSignatures map[checker.CachedSignatureKey]*checker.Signature
   undefinedProperties map[string]*ast.Symbol
   narrowedTypes map[checker.NarrowedTypeKey]*checker.Type
+  keyedPredicateCandidates map[*checker.Type]bool
   assignmentReducedTypes map[checker.AssignmentReducedKey]*checker.Type
   discriminatedContextualTypes map[checker.DiscriminatedContextualTypeKey]*checker.Type
   instantiationExpressionTypes map[checker.InstantiationExpressionKey]*checker.Type
@@ -297,6 +298,7 @@ type extra_Checker struct {
   externalRelation bool
   givingArgument bool
   lendingOwner bool
+  lendingToReadParameter bool
   transientAliases map[*ast.Node]string
   deferredPermissionReferences map[[2]*checker.Type]*checker.Type
   restTypeParameters map[*checker.Type]bool

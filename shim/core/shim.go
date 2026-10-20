@@ -128,6 +128,7 @@ const PermissionDefaultsKindAnnotated = core.PermissionDefaultsKindAnnotated
 const PermissionDefaultsKindInvariant = core.PermissionDefaultsKindInvariant
 const PermissionDefaultsKindNone = core.PermissionDefaultsKindNone
 const PermissionDefaultsKindRead = core.PermissionDefaultsKindRead
+const PermissionModifiersIgnore = core.PermissionModifiersIgnore
 type PollingKind = core.PollingKind
 const PollingKindDynamicPriority = core.PollingKindDynamicPriority
 const PollingKindFixedChunkSize = core.PollingKindFixedChunkSize

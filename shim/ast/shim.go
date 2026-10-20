@@ -755,6 +755,10 @@ func IsConditionalExpression(node *ast.Node) bool
 func IsConditionalTypeNode(node *ast.Node) bool
 //go:linkname IsConstAssertion github.com/microsoft/TypeScript/tsc/internal/ast.IsConstAssertion
 func IsConstAssertion(node *ast.Node) bool
+//go:linkname IsConstIntersectionMember github.com/microsoft/TypeScript/tsc/internal/ast.IsConstIntersectionMember
+func IsConstIntersectionMember(node *ast.Node) bool
+//go:linkname IsConstIntersectionType github.com/microsoft/TypeScript/tsc/internal/ast.IsConstIntersectionType
+func IsConstIntersectionType(node *ast.Node) bool
 //go:linkname IsConstTypeReference github.com/microsoft/TypeScript/tsc/internal/ast.IsConstTypeReference
 func IsConstTypeReference(node *ast.Node) bool
 //go:linkname IsConstructSignatureDeclaration github.com/microsoft/TypeScript/tsc/internal/ast.IsConstructSignatureDeclaration
